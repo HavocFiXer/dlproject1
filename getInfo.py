@@ -19,9 +19,9 @@ for name in imagesfolder:
 		size=im.size
 		if size[0] == 34:
 			os.system('cp %s ./'%(imagepath+name))
-			for i in xrange(size[0]):
-				for j in xrange(size[1]):
-					print im.load()[i,j]
+			#for i in xrange(size[0]):
+				#for j in xrange(size[1]):
+					#print im.load()[i,j]
 		if size[1] not in heightdic:
 			heightdic[size[1]]=1
 			if size[1]>maxheight:
