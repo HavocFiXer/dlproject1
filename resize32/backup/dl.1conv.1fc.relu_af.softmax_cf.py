@@ -9,7 +9,7 @@ import sys
 import random as rd
 
 #Load data
-f=file('data.data')
+f=file('data32x64.data')
 data=pk.load(f)
 f.close()
 totalnumber=0
@@ -52,6 +52,9 @@ def conv2d(x,w):
 
 def max_pool_2x2(x):
 	return tf.nn.max_pool(x,ksize=[1,2,2,1],strides=[1,2,2,1], padding='SAME')
+
+def max_pool_4x4(x):
+	return tf.nn.max_pool(x,ksize=[1,4,4,1],strides=[1,4,4,1], padding='SAME')
 
 def get_testset():
 	global data
@@ -123,17 +126,18 @@ def next_batch(n):
 	return [imagea,imageb,label]
 
 #Initialization
-x_a=tf.placeholder(tf.float32,[None,32,32])
-x_b=tf.placeholder(tf.float32,[None,32,32])
+x_a=tf.placeholder(tf.float32,[None,32,64])
+x_b=tf.placeholder(tf.float32,[None,32,64])
 y_=tf.placeholder(tf.float32,[None,2])
-x_image_a=tf.reshape(x_a,[-1,32,32,1])
-x_image_b=tf.reshape(x_b,[-1,32,32,1])
+x_image_a=tf.reshape(x_a,[-1,32,64,1])
+x_image_b=tf.reshape(x_b,[-1,32,64,1])
 w_conv1=weight_variable([5,5,1,32])
 b_conv1=bias_variable([32])
-w_conv2=weight_variable([5,5,32,64])
-b_conv2=bias_variable([64])
-w_fc1=weight_variable([8*8*64, 512])
-b_fc1=bias_variable([512])
+#w_conv2=weight_variable([5,5,32,64])
+#b_conv2=bias_variable([64])
+#w_fc1=weight_variable([8*8*64, 512])
+w_fc1=weight_variable([2*8*16*32, 1024])
+b_fc1=bias_variable([1024])
 w_fc2=weight_variable([1024,2])
 b_fc2=bias_variable([2])
 
@@ -142,23 +146,25 @@ keep_prob=tf.placeholder(tf.float32)
 
 #model logic
 h_conv1_a=tf.nn.relu(conv2d(x_image_a, w_conv1)+b_conv1)
-h_pool1_a=max_pool_2x2(h_conv1_a)
-h_conv2_a=tf.nn.relu(conv2d(h_pool1_a,w_conv2)+b_conv2)
-h_pool2_a=max_pool_2x2(h_conv2_a)
-h_pool2_flat_a=tf.reshape(h_pool2_a,[-1,8*8*64])
-h_fc1_a=tf.nn.relu(tf.matmul(h_pool2_flat_a, w_fc1)+b_fc1)
-h_fc1_drop_a=tf.nn.dropout(h_fc1_a, keep_prob)
+h_pool1_a=max_pool_4x4(h_conv1_a)
+#h_conv2_a=tf.nn.relu(conv2d(h_pool1_a,w_conv2)+b_conv2)
+#h_pool2_a=max_pool_2x2(h_conv2_a)
+#h_pool2_flat_a=tf.reshape(h_pool2_a,[-1,8*8*64])
+h_pool1_flat_a=tf.reshape(h_pool1_a,[-1,8*16*32])
+
 
 h_conv1_b=tf.nn.relu(conv2d(x_image_b, w_conv1)+b_conv1)
-h_pool1_b=max_pool_2x2(h_conv1_b)
-h_conv2_b=tf.nn.relu(conv2d(h_pool1_b,w_conv2)+b_conv2)
-h_pool2_b=max_pool_2x2(h_conv2_b)
-h_pool2_flat_b=tf.reshape(h_pool2_b,[-1,8*8*64])
-h_fc1_b=tf.nn.relu(tf.matmul(h_pool2_flat_b, w_fc1)+b_fc1)
-h_fc1_drop_b=tf.nn.dropout(h_fc1_b, keep_prob)
+h_pool1_b=max_pool_4x4(h_conv1_b)
+#h_conv2_b=tf.nn.relu(conv2d(h_pool1_b,w_conv2)+b_conv2)
+#h_pool2_b=max_pool_2x2(h_conv2_b)
+#h_pool2_flat_b=tf.reshape(h_pool2_b,[-1,8*8*64])
+h_pool1_flat_b=tf.reshape(h_pool1_b,[-1,8*16*32])
 
-h_fc1_concat=tf.concat(1, [h_fc1_drop_a, h_fc1_drop_b])
-y_conv=tf.matmul(h_fc1_concat, w_fc2) +b_fc2
+h_fc1_concat=tf.concat(1, [h_pool1_flat_a, h_pool1_flat_b])
+h_fc1=tf.nn.relu(tf.matmul(h_fc1_concat,w_fc1)+b_fc1)
+h_fc1_drop=tf.nn.dropout(h_fc1,keep_prob)
+
+y_conv=tf.matmul(h_fc1_drop, w_fc2) +b_fc2
 #model logic done
 
 #train logic

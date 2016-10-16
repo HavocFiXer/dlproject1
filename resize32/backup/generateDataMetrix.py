@@ -73,25 +73,27 @@ pk.dump(bucketcontaindic,f)
 f.close()
 
 
-#################################################################
-#generate test and train data
-
+#generate test data
+TestPairs={}
+totalnumber=filecounter
 #positive
-allcases=[]
-for i in xrange(writercounter):
-	if len(datalist[i])<2:
+counter=0
+while counter<5000:
+	pick=rd.randint(0,totalnumber-1)
+	if bucketcontaindic[bucketdic[pick]]==1:
 		continue
-	for j in xrange(len(datalist[i])-1):
-		for k in xrange(j+1,len(datalist[i])):
-			allcases.append([((i,j),(i,k)), [1.0, 0.0]])
-positivenumber=len(allcases)
-#print 'positive ones:', len(allcases)
+	#print[i for i in range(bucketcontaindic[bucketdic[pick]])]
+	tmp=rd.sample(xrange(bucketcontaindic[bucketdic[pick]]),2)
+	if tmp[0]>tmp[1]:
+		tmp[0],tmp[1]=tmp[1],tmp[0]
+	element=((bucketdic[pick],tmp[0]),(bucketdic[pick],tmp[1]))
+	if element not in TestPairs:
+		TestPairs[element]=[1.0, 0.0]
+		counter+=1
 
 #negative
-negativedic={}
-totalnumber=filecounter
 counter=0
-while counter<positivenumber:
+while counter<5000:
 	pick1=rd.randint(0,totalnumber-1)
 	pick2=rd.randint(0,totalnumber-1)
 	if bucketdic[pick1]==bucketdic[pick2]:
@@ -101,23 +103,19 @@ while counter<positivenumber:
 	tmp1=rd.randint(0,bucketcontaindic[bucketdic[pick1]]-1)
 	tmp2=rd.randint(0,bucketcontaindic[bucketdic[pick2]]-1)
 	element=((bucketdic[pick1],tmp1),(bucketdic[pick2],tmp2))
-	if element not in negativedic:
-		negativedic[element]=[0.0, 1.0]
-		allcases.append([element, [0.0, 1.0]])
+	if element not in TestPairs:
+		TestPairs[element]=[0.0, 1.0]
 		counter+=1
 
-rd.shuffle(allcases)
-allnumber=len(allcases)
 
-
-testnumber=allnumber/20
-testset=allcases[:testnumber]
-trainset=allcases[testnumber:]
-
-f=file('test.data','w')
-pk.dump(testset,f)
+f=file('testdic.data','w')
+pk.dump(TestPairs,f)
 f.close()
 
-f=file('train.data','w')
-pk.dump(trainset,f)
+f=file('testlist.data','w')
+testpairlist=[[],[]]
+for a,b in TestPairs.items():
+	testpairlist[0].append(a)
+	testpairlist[1].append(b)
+pk.dump(testpairlist,f)
 f.close()
